@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 // import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:minor_app/auth/login.dart';
-import 'package:minor_app/navigation.dart';
+import 'package:minor_app/bottom-navbar/navigation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {

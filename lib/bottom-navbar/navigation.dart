@@ -2,9 +2,10 @@ import 'package:flashy_tab_bar2/flashy_tab_bar2.dart';
 import 'package:flutter/material.dart';
 import 'package:minor_app/pages/chat.dart';
 import 'package:minor_app/const/const.dart';
+import 'package:minor_app/pages/emergency_call_page.dart';
 import 'package:minor_app/pages/home.dart';
 import 'package:minor_app/pages/profile.dart';
-import 'package:minor_app/pages/rescue.dart';
+import 'package:minor_app/pages/animal_card.dart';
 
 class MyBottomNavigationBar extends StatefulWidget {
   final token;
@@ -20,7 +21,8 @@ class _MyBottomNavigationBarState extends State<MyBottomNavigationBar> {
   Widget build(BuildContext context) {
     List<Widget> list = [
       HomePage(token: widget.token),
-      RescuePage(),
+      EmergencyCallPage(),
+      AnimalListPage(),
       ChatPage(),
       ProfilePage()
     ];
@@ -36,6 +38,7 @@ class _MyBottomNavigationBarState extends State<MyBottomNavigationBar> {
         items: [
           _flashyItems("Home", Icons.home),
           _flashyItems("Rescue", Icons.call),
+          _flashyItems("Adopt", Icons.pets),
           _flashyItems("Chat", Icons.chat),
           _flashyItems("Profile", Icons.person),
         ],

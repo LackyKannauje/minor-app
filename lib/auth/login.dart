@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:minor_app/auth/forget_password.dart';
+import 'package:minor_app/const/config.dart';
 
 import 'package:minor_app/const/mybutton.dart';
-import 'package:minor_app/navigation.dart';
+import 'package:minor_app/bottom-navbar/navigation.dart';
 import 'package:minor_app/auth/signup.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -40,8 +41,7 @@ class _LoginPageState extends State<LoginPage> {
         'email': emailController.text,
         'password': passwordController.text
       };
-      var response = await http.post(
-          Uri.parse('http://192.168.215.72:8000/user/login'),
+      var response = await http.post(Uri.parse('$apiBaseUrl/api/user/login'),
           body: jsonEncode(regBody),
           headers: {'content-type': 'application/json'});
 

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:minor_app/auth/login.dart';
+import 'package:minor_app/const/config.dart';
 import 'package:minor_app/const/mybutton.dart';
 import '../const/ui_helper.dart';
 import 'package:http/http.dart' as http;
@@ -29,8 +30,7 @@ class _SignupPageState extends State<SignupPage> {
         'email': emailController.text,
         'password': passwordController.text
       };
-      var response = await http.post(
-          Uri.parse('http://192.168.215.72:8000/user/signup'),
+      var response = await http.post(Uri.parse('$apiBaseUrl/api/user/signup'),
           body: jsonEncode(regBody),
           headers: {'content-type': 'application/json'});
 

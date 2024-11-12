@@ -44,6 +44,10 @@ dependencies:
   path: ^1.9.0
   cached_network_image: ^3.3.1
   provider: ^6.1.2
+  image_picker: ^1.1.2
+  fluttertoast: ^8.2.8
+  url_launcher: ^6.3.1
+  flutter_phone_direct_caller: ^2.1.1
 
 dev_dependencies:
   flutter_test:
