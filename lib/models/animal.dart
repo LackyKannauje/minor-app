@@ -1,13 +1,12 @@
 class Animal {
-  final String name;
+  final String category; 
   final String description;
 
-  Animal({required this.name, required this.description});
-
+  Animal({required this.category, required this.description});
 
   factory Animal.fromJson(Map<String, dynamic> json) {
     return Animal(
-      name: json['name'],
+      category: json['category'], 
       description: json['description'],
     );
   }
