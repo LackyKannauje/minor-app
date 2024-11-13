@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class AddAnimalForm extends StatefulWidget {
   @override
@@ -8,41 +8,26 @@ class AddAnimalForm extends StatefulWidget {
 }
 
 class _AddAnimalFormState extends State<AddAnimalForm> {
-  final TextEditingController nameController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController locationController = TextEditingController();
   final TextEditingController contactController = TextEditingController();
 
+  String category = 'Dog';
   String status = 'available for adoption';
+  File? _image; 
 
-  Future<void> submitAnimalDetails() async {
-    final name = nameController.text;
-    final description = descriptionController.text;
-    final location = locationController.text;
-    final contact = contactController.text;
+  Future<void> _pickImage(ImageSource source) async {
+    final picker = ImagePicker();
+    final pickedImage = await picker.pickImage(source: source);
 
-    final url = Uri.parse('http://localhost:8000/api/animal/add');
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'name': name,
-        'description': description,
-        'status': status,
-        'location': location,
-        'contact': contact,
-      }),
-    );
-
-    if (response.statusCode == 201) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Animal added successfully')));
-      Navigator.of(context).pop();
-    } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Failed to add animal')));
+    if (pickedImage != null) {
+      setState(() {
+        _image = File(pickedImage.path);
+      });
     }
   }
+
+  Future<void> submitAnimalDetails() async {}
 
   @override
   Widget build(BuildContext context) {
@@ -52,10 +37,24 @@ class _AddAnimalFormState extends State<AddAnimalForm> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(
-              controller: nameController,
-              decoration: InputDecoration(labelText: 'Animal Name'),
+            // Dropdown for Category
+            DropdownButtonFormField<String>(
+              value: category,
+              onChanged: (newCategory) {
+                setState(() {
+                  category = newCategory!;
+                });
+              },
+              items: [
+                DropdownMenuItem(value: 'Dog', child: Text('Dog')),
+                DropdownMenuItem(value: 'Cat', child: Text('Cat')),
+                DropdownMenuItem(value: 'Bird', child: Text('Bird')),
+                DropdownMenuItem(value: 'Other', child: Text('Other')),
+              ],
+              decoration: InputDecoration(labelText: 'Category'),
+              isExpanded: true, 
             ),
+
             TextField(
               controller: descriptionController,
               decoration: InputDecoration(labelText: 'Description'),
@@ -68,7 +67,9 @@ class _AddAnimalFormState extends State<AddAnimalForm> {
               controller: contactController,
               decoration: InputDecoration(labelText: 'Contact Info'),
             ),
-            DropdownButton<String>(
+            
+            // Dropdown for Status
+            DropdownButtonFormField<String>(
               value: status,
               onChanged: (newStatus) {
                 setState(() {
@@ -83,7 +84,48 @@ class _AddAnimalFormState extends State<AddAnimalForm> {
                 DropdownMenuItem(
                     value: 'needs rescue', child: Text('Needs Rescue')),
               ],
+              decoration: InputDecoration(labelText: 'Status'),
+              isExpanded: true,
             ),
+
+            // Image Upload Button
+            SizedBox(height: 20),
+            _image == null
+                ? Text("No image selected.")
+                : Image.file(_image!, height: 100, width: 100),
+            ElevatedButton.icon(
+              icon: Icon(Icons.add_a_photo),
+              label: Text("Add Image"),
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return Wrap(
+                      children: <Widget>[
+                        ListTile(
+                          leading: Icon(Icons.photo_library),
+                          title: Text('Upload from Gallery'),
+                          onTap: () {
+                            _pickImage(ImageSource.gallery);
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                        ListTile(
+                          leading: Icon(Icons.camera_alt),
+                          title: Text('Open Camera'),
+                          onTap: () {
+                            _pickImage(ImageSource.camera);
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
+            
+            SizedBox(height: 20),
             ElevatedButton(
               onPressed: submitAnimalDetails,
               child: Text('Submit'),
