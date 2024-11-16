@@ -1,23 +1,20 @@
 import 'dart:convert';
-
-import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-// import 'package:flutter/widgets.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:minor_app/const/config.dart';
 import 'package:minor_app/pages/screens/camera.dart';
 import 'package:minor_app/const/const.dart';
 import 'package:minor_app/auth/login.dart';
-// import 'package:minor_app/missing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:cached_network_image/cached_network_image.dart';
 
 ValueNotifier<int> _selectedIndex = ValueNotifier<int>(0);
-Map<String, List<dynamic>> cachedImages = {};
 
 class HomePage extends StatefulWidget {
   final String token;
   const HomePage({required this.token, Key? key}) : super(key: key);
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -32,7 +29,7 @@ class _HomePageState extends State<HomePage> {
     "Goat",
     "Rabbit"
   ];
-  List<dynamic> selectedAnimalImages = [];
+  List<dynamic> selectedAnimalCategory = [];
   bool isLoading = false;
 
   @override
@@ -43,13 +40,11 @@ class _HomePageState extends State<HomePage> {
     fetchImages(animalCategorylist[_selectedIndex.value]);
   }
 
-  Future<void> initializeCamera() async {
-    final cameras = await availableCameras();
-    final firstCamera = cameras.first;
+  void initializeCamera() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CameraPage(camera: firstCamera),
+        builder: (context) => CameraPage(),
       ),
     );
   }
@@ -66,30 +61,25 @@ class _HomePageState extends State<HomePage> {
       isLoading = true;
     });
 
-    if (cachedImages.containsKey(query)) {
-      setState(() {
-        selectedAnimalImages = cachedImages[query]!;
-        isLoading = false;
-      });
-      return;
-    }
+    final url = '$apiBaseUrl/api/animal/category/' + query;
 
-    final url =
-        'https://pixabay.com/api/?key=44047406-c815a6a2a9aca5d86609f49bb&q=' +
-            query;
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
-        final JsonResponse = jsonDecode(response.body);
+        final jsonResponse = jsonDecode(response.body);
         setState(() {
-          selectedAnimalImages = JsonResponse['hits'];
-          cachedImages[query] = selectedAnimalImages;
+          selectedAnimalCategory = jsonResponse;
         });
       } else {
-        // Handle error
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Status not 200'),
+        ));
+        print('something went wrong');
       }
     } catch (e) {
-      // Handle error
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Error $e'),
+      ));
     } finally {
       setState(() {
         isLoading = false;
@@ -107,7 +97,6 @@ class _HomePageState extends State<HomePage> {
             IconButton(onPressed: () {}, icon: const Icon(Icons.notifications))
           ],
         ),
-        drawer: drawerWidget(),
         body: SingleChildScrollView(
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -142,7 +131,11 @@ class _HomePageState extends State<HomePage> {
                 ),
                 isLoading
                     ? const Center(child: CircularProgressIndicator())
-                    : resultPetImages()
+                    : selectedAnimalCategory.isEmpty
+                        ? Center(
+                            child: Text("No Animals"),
+                          )
+                        : resultPetImages()
               ],
             ),
           ),
@@ -153,14 +146,13 @@ class _HomePageState extends State<HomePage> {
 
   GridView resultPetImages() {
     return GridView.builder(
-      // scrollDirection: Axis.vertical,
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         childAspectRatio: 0.7,
       ),
-      itemCount: selectedAnimalImages.length,
+      itemCount: selectedAnimalCategory.length,
       itemBuilder: (BuildContext context, int index) {
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -180,7 +172,7 @@ class _HomePageState extends State<HomePage> {
             child: Stack(
               children: [
                 CachedNetworkImage(
-                  imageUrl: selectedAnimalImages[index]['largeImageURL'],
+                  imageUrl: selectedAnimalCategory[index]['image'],
                   fit: BoxFit.cover,
                   width: double.infinity,
                   height: double.infinity,
@@ -199,22 +191,23 @@ class _HomePageState extends State<HomePage> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      '${animalCategorylist[_selectedIndex.value]} ${index + 1}',
+                      '${selectedAnimalCategory[index]['status']}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
+                        fontSize: 10,
                       ),
                     ),
                   ),
                 ),
                 Positioned(
-                  bottom: 10,
+                  top: 10,
                   right: 10,
                   child: Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     child: const Icon(
-                      Icons.favorite,
+                      Icons.pets_outlined,
                       color: Colors.white,
                       size: 25,
                     ),
@@ -225,59 +218,6 @@ class _HomePageState extends State<HomePage> {
           ),
         );
       },
-    );
-  }
-
-  Drawer drawerWidget() {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          const DrawerHeader(
-            decoration: BoxDecoration(
-              color: thirdColor,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                CircleAvatar(
-                  backgroundImage: AssetImage('assets/profile.jpg'),
-                  radius: 35,
-                ),
-                SizedBox(
-                  height: 5,
-                ),
-                Text(
-                  "Kunal Verma",
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-          ),
-          ListTile(
-            title: const Text('Item 1'),
-            onTap: () {
-              // Update the state of the app.
-              // ...
-            },
-          ),
-          ListTile(
-            title: const Text('Item 2'),
-            onTap: () {
-              // Update the state of the app.
-              // ...
-            },
-          ),
-          ListTile(
-            title: const Text('Item 3'),
-            onTap: () {
-              // Update the state of the app.
-              // ...
-            },
-          ),
-        ],
-      ),
     );
   }
 

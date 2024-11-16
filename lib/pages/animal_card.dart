@@ -31,7 +31,7 @@ class AnimalListPage extends StatelessWidget {
                   child: ListTile(
                     contentPadding: EdgeInsets.all(15),
                     title: Text(
-                      animals[index].category, // Updated to display category
+                      animals[index].category,
                       style:
                           TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),

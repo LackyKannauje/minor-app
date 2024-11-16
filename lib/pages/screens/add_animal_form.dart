@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart'; // Add this import
 import 'dart:io';
+
+import 'package:minor_app/const/config.dart';
 
 class AddAnimalForm extends StatefulWidget {
   @override
@@ -14,7 +18,7 @@ class _AddAnimalFormState extends State<AddAnimalForm> {
 
   String category = 'Dog';
   String status = 'available for adoption';
-  File? _image; 
+  File? _image;
 
   Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
@@ -27,7 +31,49 @@ class _AddAnimalFormState extends State<AddAnimalForm> {
     }
   }
 
-  Future<void> submitAnimalDetails() async {}
+  Future<void> submitAnimalDetails() async {
+    final url = Uri.parse('$apiBaseUrl/api/animal/add');
+
+    var request = http.MultipartRequest('POST', url);
+
+    // Adding fields to the request
+    request.fields['category'] = category;
+    request.fields['description'] = descriptionController.text;
+    request.fields['status'] = status;
+    request.fields['location'] = locationController.text;
+    request.fields['contact'] = contactController.text;
+
+    // Adding image file if it exists
+    if (_image != null) {
+      request.files.add(await http.MultipartFile.fromPath(
+        'image',
+        _image!.path,
+        contentType:
+            MediaType('image', 'jpeg'), // Uses MediaType from http_parser
+      ));
+    }
+
+    try {
+      final response = await request.send();
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        print("Animal added successfully");
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Animal added successfully!'),
+        ));
+      } else {
+        print("Failed to add animal. Status code: ${response.statusCode}");
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Failed to add animal.'),
+        ));
+      }
+    } catch (e) {
+      print("An error occurred: $e");
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('An error occurred while adding the animal.'),
+      ));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +98,7 @@ class _AddAnimalFormState extends State<AddAnimalForm> {
                 DropdownMenuItem(value: 'Other', child: Text('Other')),
               ],
               decoration: InputDecoration(labelText: 'Category'),
-              isExpanded: true, 
+              isExpanded: true,
             ),
 
             TextField(
@@ -67,7 +113,7 @@ class _AddAnimalFormState extends State<AddAnimalForm> {
               controller: contactController,
               decoration: InputDecoration(labelText: 'Contact Info'),
             ),
-            
+
             // Dropdown for Status
             DropdownButtonFormField<String>(
               value: status,
@@ -124,7 +170,7 @@ class _AddAnimalFormState extends State<AddAnimalForm> {
                 );
               },
             ),
-            
+
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: submitAnimalDetails,
