@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-// import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:minor_app/auth/login.dart';
 import 'package:minor_app/bottom-navbar/navigation.dart';
+import 'package:minor_app/pages/screens/splash_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
@@ -12,15 +12,14 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-  final token;
+  final String? token;
   const MyApp({@required this.token, super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: (token != null) ? MyBottomNavigationBar(token: token) : LoginPage(),
+      home: SplashScreen(token: token), // Pass token to SplashScreen
     );
   }
 }
