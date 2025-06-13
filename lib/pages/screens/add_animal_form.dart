@@ -4,8 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart'; // Add this import
 import 'dart:io';
 
-import 'package:minor_app/const/config.dart';
-
 class AddAnimalForm extends StatefulWidget {
   @override
   _AddAnimalFormState createState() => _AddAnimalFormState();
@@ -32,17 +30,17 @@ class _AddAnimalFormState extends State<AddAnimalForm> {
   }
 
   Future<void> submitAnimalDetails() async {
-    final url = Uri.parse('$apiBaseUrl/api/animal/add');
+    final url = Uri.parse('https://minor-backend-xi.vercel.app/api/animal/add');
 
     var request = http.MultipartRequest('POST', url);
 
     // Adding fields to the request
-    request.fields['category'] = category;
+    request.fields['category'] = category.toLowerCase();
     request.fields['description'] = descriptionController.text;
     request.fields['status'] = status;
     request.fields['location'] = locationController.text;
     request.fields['contact'] = contactController.text;
-
+    print(request.fields);
     // Adding image file if it exists
     if (_image != null) {
       request.files.add(await http.MultipartFile.fromPath(

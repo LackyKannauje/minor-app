@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:animal_rescue_application/auth/login.dart';
+import 'package:animal_rescue_application/const/globles.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../const/profile_text.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -9,6 +13,13 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+  Future<void> logout() async {
+    final pref = await _prefs;
+    pref.remove('token');
+    globalToken = null;
+  }
+
   @override
   Widget build(BuildContext context) {
     var isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
@@ -33,7 +44,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 radius: 55,
               ),
               Text(
-                'RescuHub',
+                JwtDecoder.decode(globalToken!)['user']?['id'],
                 style: TextStyle(
                   fontSize: 23,
                 ),
@@ -78,7 +89,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 height: 30,
               ),
               ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () => {
+                  logout(),
+                  Navigator.pushReplacement(context,
+                      MaterialPageRoute(builder: (context) => LoginPage()))
+                },
                 style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
                     backgroundColor: Color.fromRGBO(255, 103, 103, 1)),

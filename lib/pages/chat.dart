@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:minor_app/const/const.dart';
-import 'package:minor_app/pages/message.dart';
+import 'package:animal_rescue_application/const/const.dart';
+import 'package:animal_rescue_application/pages/message.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});

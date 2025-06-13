@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:minor_app/const/config.dart';
-import 'package:minor_app/const/const.dart';
+import 'package:animal_rescue_application/const/const.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:animal_rescue_application/const/globles.dart';
 // import 'package:mime/mime.dart';
 
 class AnimalRescueForm extends StatefulWidget {
@@ -21,19 +21,23 @@ class _AnimalRescueFormState extends State<AnimalRescueForm> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
+  String? _selectedCaseType;
+
+  final List<String> _caseTypes = ["adoption", "missing", "rescue"];
 
   Future<void> submitAnimalDetails() async {
-    final url = Uri.parse('$apiBaseUrl/api/animal/add');
+    final url = Uri.parse('https://minor-backend-xi.vercel.app/api/animal/add');
 
     var request = http.MultipartRequest('POST', url);
 
-    request.fields['category'] = _petController.text;
+    request.fields['category'] = _petController.text.toLowerCase();
+    request.fields['caseType'] = _selectedCaseType!;
     request.fields['description'] = _descriptionController.text;
-    request.fields['status'] = 'missing';
     request.fields['location'] = _locationController.text;
     request.fields['contact'] = _contactController.text;
-
-    // print(request.fields);
+    if (globalToken != null) {
+      request.headers.addAll({'x-auth-token': globalToken!});
+    }
     if (widget.image != null) {
       request.files.add(await http.MultipartFile.fromPath(
         'image',
@@ -41,24 +45,20 @@ class _AnimalRescueFormState extends State<AnimalRescueForm> {
         contentType: MediaType('image', 'jpeg'),
       ));
     }
-    print(request.fields);
 
     try {
       final response = await request.send();
-      final responseBody = await response.stream.bytesToString();
 
-      print(responseBody);
       if (response.statusCode == 201 || response.statusCode == 200) {
         print("Animal added successfully");
-        // ignore: use_build_context_synchronously
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: const Text('Rescue Req added successfully!'),
+            content: const Text('Rescue Request added successfully!'),
           ));
         }
       } else {
         print("Failed to add animal. Status code: ${response.statusCode}");
-        // ignore: use_build_context_synchronously
+        print(response);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Failed to add Request.'),
@@ -67,11 +67,9 @@ class _AnimalRescueFormState extends State<AnimalRescueForm> {
       }
     } catch (e) {
       print("An error occurred: $e");
-
-      // ignore: use_build_context_synchronously
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('An error occurred while adding the req.'),
+          content: Text('An error occurred while adding the request.'),
         ));
       }
     }
@@ -97,10 +95,12 @@ class _AnimalRescueFormState extends State<AnimalRescueForm> {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 10),
-              TextFormField(
-                controller: _petController,
+              DropdownButtonFormField<String>(
+                value: _petController.text.isEmpty
+                    ? null
+                    : _petController.text, // Initial value
                 decoration: InputDecoration(
-                  labelText: "Enter a Pet or Name",
+                  labelText: "Select Pet Type",
                   prefixIcon: Icon(Icons.pets),
                   filled: true,
                   fillColor: Colors.grey[200],
@@ -108,10 +108,25 @@ class _AnimalRescueFormState extends State<AnimalRescueForm> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
+                items: ["Dog", "Cat", "Bird", "Rabbit", "Other"]
+                    .map((String category) {
+                  return DropdownMenuItem<String>(
+                    value: category,
+                    child: Text(category),
+                  );
+                }).toList(),
+                onChanged: (String? value) {
+                  setState(() {
+                    _petController.text = value ?? ""; // Update the controller
+                  });
+                },
                 validator: (value) {
-                  return value!.isEmpty ? "Please Enter Name or Pet" : null;
+                  return value == null || value.isEmpty
+                      ? "Please select a pet type"
+                      : null;
                 },
               ),
+
               SizedBox(height: 20),
               Text(
                 "Mobile Number",
@@ -159,6 +174,37 @@ class _AnimalRescueFormState extends State<AnimalRescueForm> {
                 maxLines: 3,
                 validator: (value) {
                   return value!.isEmpty ? "Please enter a description" : null;
+                },
+              ),
+              SizedBox(height: 20),
+              // Case Type Dropdown
+              Text(
+                "Case Type",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                value: _selectedCaseType,
+                items: _caseTypes
+                    .map((type) => DropdownMenuItem(
+                          value: type,
+                          child: Text(type),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedCaseType = value!;
+                  });
+                },
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.grey[200],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                validator: (value) {
+                  return value == null ? "Please select a case type" : null;
                 },
               ),
               SizedBox(height: 20),

@@ -1,26 +1,29 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
-import 'package:minor_app/const/config.dart';
-import 'package:minor_app/pages/screens/camera.dart';
-import 'package:minor_app/const/const.dart';
-import 'package:minor_app/auth/login.dart';
+import 'package:animal_rescue_application/const/globles.dart';
+import 'package:animal_rescue_application/pages/screens/animal_detail.dart';
+import 'package:animal_rescue_application/pages/screens/camera.dart';
+import 'package:animal_rescue_application/const/const.dart';
+import 'package:animal_rescue_application/auth/login.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
-import 'package:cached_network_image/cached_network_image.dart';
 
 ValueNotifier<int> _selectedIndex = ValueNotifier<int>(0);
 
 class HomePage extends StatefulWidget {
-  final String token;
-  const HomePage({required this.token, Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  late String email;
+  @override
+  void initState() {
+    super.initState();
+    fetchImages(animalCategorylist[_selectedIndex.value]);
+  }
+
   List<String> animalCategorylist = [
     "Dog",
     "Cow",
@@ -31,14 +34,6 @@ class _HomePageState extends State<HomePage> {
   ];
   List<dynamic> selectedAnimalCategory = [];
   bool isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
-    email = jwtDecodedToken['email'];
-    fetchImages(animalCategorylist[_selectedIndex.value]);
-  }
 
   void initializeCamera() {
     Navigator.push(
@@ -52,6 +47,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> logout() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.remove('token');
+    globalToken = 'null';
     Navigator.pushReplacement(
         context, MaterialPageRoute(builder: (context) => LoginPage()));
   }
@@ -61,10 +57,12 @@ class _HomePageState extends State<HomePage> {
       isLoading = true;
     });
 
-    final url = '$apiBaseUrl/api/animal/category/' + query;
+    final url = 'https://minor-backend-xi.vercel.app/api/animal/category/' +
+        query.toLowerCase();
 
     try {
       final response = await http.get(Uri.parse(url));
+      print(response.body);
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
         setState(() {
@@ -92,7 +90,7 @@ class _HomePageState extends State<HomePage> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Hello, User'),
+          title: Text('Hello'),
           actions: [
             IconButton(onPressed: () {}, icon: const Icon(Icons.notifications))
           ],
@@ -154,66 +152,80 @@ class _HomePageState extends State<HomePage> {
       ),
       itemCount: selectedAnimalCategory.length,
       itemBuilder: (BuildContext context, int index) {
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                spreadRadius: 2,
-                blurRadius: 5,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(15),
-            child: Stack(
-              children: [
-                CachedNetworkImage(
-                  imageUrl: selectedAnimalCategory[index]['image'],
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  height: double.infinity,
-                  placeholder: (context, url) =>
-                      const Center(child: CircularProgressIndicator()),
-                  errorWidget: (context, url, error) => const Icon(Icons.error),
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => AnimalDetailPage(
+                          animal: selectedAnimalCategory[index],
+                        )));
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  spreadRadius: 2,
+                  blurRadius: 5,
+                  offset: const Offset(0, 3),
                 ),
-                Positioned(
-                  bottom: 10,
-                  left: 10,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${selectedAnimalCategory[index]['status']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10,
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(15),
+              child: Stack(
+                children: [
+                  Image.network(
+                    selectedAnimalCategory[index]['image'],
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: double.infinity,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const Center(child: CircularProgressIndicator());
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Center(child: Icon(Icons.error));
+                    },
+                  ),
+                  Positioned(
+                    bottom: 10,
+                    left: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${selectedAnimalCategory[index]['status']}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    child: const Icon(
-                      Icons.pets_outlined,
-                      color: Colors.white,
-                      size: 25,
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      child: const Icon(
+                        Icons.pets_outlined,
+                        color: Colors.white,
+                        size: 25,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -232,7 +244,7 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         children: [
           const Text(
-            "Upload Missing",
+            "Upload Report",
             style: TextStyle(fontSize: 17, fontWeight: FontWeight.w500),
           ),
           const SizedBox(
